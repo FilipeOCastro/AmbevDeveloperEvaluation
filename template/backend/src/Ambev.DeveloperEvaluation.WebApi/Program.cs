@@ -29,10 +29,20 @@ public class Program
             builder.AddBasicHealthChecks();
             builder.Services.AddSwaggerGen();
 
+            //builder.Services.AddDbContext<DefaultContext>(options =>
+            //{
+            //    options.UseInMemoryDatabase("InMemoryDb");// Provedor em memória
+
+            //    //options.UseNpgsql(
+            //    //    builder.Configuration.GetConnectionString("DefaultConnection"),
+            //    //    b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM")
+            //    //);
+            //});
+
             builder.Services.AddDbContext<DefaultContext>(options =>
                 options.UseNpgsql(
-                    builder.Configuration.GetConnectionString("DefaultConnection"),
-                    b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM")
+                builder.Configuration.GetConnectionString("DefaultConnection"),
+                 b => b.MigrationsAssembly("Ambev.DeveloperEvaluation.ORM")
                 )
             );
 
