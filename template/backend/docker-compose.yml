@@ -1,50 +1,45 @@
 version: '3.8'
 
 services:
-  ambev.developerevaluation.webapi:
-    container_name: ambev_developer_evaluation_webapi
-    image: ${DOCKER_REGISTRY-}ambevdeveloperevaluationwebapi
+  ambev.webapi:
+    container_name: ambev_webapi
+    image: ${DOCKER_REGISTRY-}ambevapi
     build:
       context: .
       dockerfile: src/Ambev.DeveloperEvaluation.WebApi/Dockerfile
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_HTTPS_PORTS=8081
+      - ASPNETCORE_HTTP_PORTS=${ASPNETCORE_HTTP_PORTS:-5000}
     ports:
-      - "5000"
-      - "8081"
+      - "${ASPNETCORE_HTTP_PORTS:-5000}:${ASPNETCORE_HTTP_PORTS:-5000}"
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
+    depends_on:
+      - ambev.database
+    command: ["sh", "-c", "until pg_isready -h ambev_database -p 5432; do echo waiting for db; sleep 3; done; dotnet Ambev.DeveloperEvaluation.WebApi.dll"]
+    networks:
+      - ab_net
 
-  ambev.developerevaluation.database:
-    container_name: ambev_developer_evaluation_database
+  ambev.database:
+    container_name: ambev_database
     image: postgres:13
-
     environment:
-      POSTGRES_DB: developer_evaluation
-      POSTGRES_USER: developer
-      POSTGRES_PASSWORD: ev@luAt10n
+      POSTGRES_DB: ambev
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin@0010
     ports:
-      - "5432"
+      - "5432:5432"
     restart: unless-stopped
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./scripts/script-database.sql:/docker-entrypoint-initdb.d/script-database.sql
+       
+    networks:
+      - ab_net
 
-  ambev.developerevaluation.nosql:
-    container_name: ambev_developer_evaluation_nosql 
-    image: mongo:8.0    
-    environment:
-        MONGO_INITDB_ROOT_USERNAME: developer
-        MONGO_INITDB_ROOT_PASSWORD: ev@luAt10n
-    ports:
-      - "27017"
+volumes:   
+     postgres:
 
-  ambev.developerevaluation.cache:
-    container_name: ambev_developer_evaluation_cache 
-    image: redis:7.4.1-alpine     
-    command: redis-server --requirepass ev@luAt10n
-    environment:
-       MONGO_INITDB_ROOT_USERNAME: developer
-       MONGO_INITDB_ROOT_PASSWORD: ev@luAt10n
-    ports:
-       - "6379"
+networks:
+  ab_net:
+    driver: bridge
