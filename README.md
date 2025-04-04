@@ -11,6 +11,6 @@ docker-compose up --build
 ```
 
 This starts:
-- 🌐 API (port 5000)
+-  API http://localhost:5000/swagger/index.html
 
 ---
